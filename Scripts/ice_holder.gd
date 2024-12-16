@@ -24,7 +24,6 @@ func make_2d_array() -> Array:
 func _on_grid_make_ice(board_position) -> void:
 	if ice_pieces.size() == 0:
 		ice_pieces = make_2d_array()
-		print(board_position)
 	var current = ice.instantiate()
 	add_child(current)
 	current.position = Vector2(board_position.x * 64 + 64, -board_position.y * 64 + 820)

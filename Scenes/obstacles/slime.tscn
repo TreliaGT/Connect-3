@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://bc2t5b35d6xeq"]
+
+[ext_resource type="PackedScene" uid="uid://bdtenesq1t330" path="res://Scenes/obstacles/ice.tscn" id="1_1hpti"]
+[ext_resource type="Texture2D" uid="uid://cafn58nq4qp4y" path="res://Art/Obstacles/Slime.png" id="2_kn64i"]
+
+[node name="slime" instance=ExtResource("1_1hpti")]
+
+[node name="Sprite2D" parent="." index="0"]
+texture = ExtResource("2_kn64i")

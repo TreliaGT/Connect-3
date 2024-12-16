@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://bdtenesq1t330"]
 
-[ext_resource type="Script" path="res://Scripts/ice.gd" id="1_1xmp2"]
+[ext_resource type="Script" path="res://Scripts/obstacles.gd" id="1_1xmp2"]
 [ext_resource type="Texture2D" uid="uid://dnwateogq8xqf" path="res://Art/Obstacles/Ice.png" id="1_lwjgb"]
 
 [node name="ice" type="Node2D"]

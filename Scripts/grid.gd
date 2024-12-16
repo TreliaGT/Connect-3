@@ -17,6 +17,7 @@ var height = 10
 @export var ice_spaces : PackedVector2Array
 @export var lock_spaces : PackedVector2Array
 @export var concrete_spaces : PackedVector2Array
+@export var slime_spaces : PackedVector2Array
 
 #obstacle Signals
 signal damage_ice
@@ -27,6 +28,9 @@ signal make_lock
 
 signal damage_concrete
 signal make_concrete
+
+signal damage_slime
+signal make_slime
 
 # The Piece Array
 var possible_pieces = [
@@ -62,12 +66,15 @@ func _ready() -> void:
 	spawn_ice()
 	spawn_locks()
 	spawn_concrete()
+	spawn_slime()
 
 #check non movable tiles
 func restricted_fill(place) -> bool:
 	if is_in_array(empty_spaces , place):
 		return true
 	if is_in_array(concrete_spaces , place):
+		return true
+	if is_in_array(slime_spaces , place):
 		return true
 	return false
 
@@ -131,6 +138,11 @@ func spawn_locks():
 func spawn_concrete():
 	for i in concrete_spaces.size():
 		emit_signal("make_concrete", concrete_spaces[i])
+
+#spawn slime
+func spawn_slime():
+	for i in slime_spaces.size():
+		emit_signal("make_slime", slime_spaces[i])
 
 # works out where to display each piece
 func grid_to_pixel(column , row) -> Vector2:
@@ -287,11 +299,25 @@ func check_concrete(column,row):
 	if row > 0:
 		emit_signal("damage_concrete", Vector2(column,row-1))
 	
+func check_slime(column,row):
+	#check right
+	if column < width -1:
+		emit_signal("damage_slime", Vector2(column+1,row))
+	#check left
+	if column > 0:
+		emit_signal("damage_slime", Vector2(column-1,row))
+	#check up
+	if row < height -1:
+		emit_signal("damage_slime", Vector2(column,row+1))
+	#check down
+	if row > 0:
+		emit_signal("damage_slime", Vector2(column,row-1))
 
 func damage_special(column,row):
 	emit_signal("damage_ice" , Vector2(column,row))
 	emit_signal("damage_lock", Vector2(column,row))
 	check_concrete(column,row)
+	check_slime(column,row)
 
 #moving the pieces down
 func collapse_columns():
@@ -356,3 +382,7 @@ func _on_lock_holder_remove_lock(place: Vector2) -> void:
 
 func _on_concrete_holder_remove_concrete(place : Vector2) -> void:
 	remove_from_array(concrete_spaces , place)
+
+
+func _on_slime_holder_remove_slime(place):
+	remove_from_array(slime_spaces , place)

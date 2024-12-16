@@ -12,12 +12,8 @@ config_version=5
 
 config/name="Match 3"
 run/main_scene="res://Scenes/game_window.tscn"
-config/features=PackedStringArray("4.3", "GL Compatibility")
+config/features=PackedStringArray("4.2", "GL Compatibility")
 config/icon="res://icon.svg"
-
-[autoload]
-
-GLOBAL="*res://Scripts/global.gd"
 
 [display]
 
