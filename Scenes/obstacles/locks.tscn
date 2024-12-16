@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://bw4wxi85tf0cv"]
+
+[ext_resource type="PackedScene" uid="uid://bdtenesq1t330" path="res://Scenes/obstacles/ice.tscn" id="1_y01p3"]
+[ext_resource type="Texture2D" uid="uid://wldn2wy016h3" path="res://Art/Obstacles/Locks.png" id="1_y1674"]
+
+[node name="locks" instance=ExtResource("1_y01p3")]
+
+[node name="Sprite2D" parent="." index="0"]
+texture = ExtResource("1_y1674")
