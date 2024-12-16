@@ -16,6 +16,7 @@ var height = 10
 @export var empty_spaces : PackedVector2Array
 @export var ice_spaces : PackedVector2Array
 @export var lock_spaces : PackedVector2Array
+@export var concrete_spaces : PackedVector2Array
 
 #obstacle Signals
 signal damage_ice
@@ -23,6 +24,9 @@ signal make_ice
 
 signal damage_lock
 signal make_lock
+
+signal damage_concrete
+signal make_concrete
 
 # The Piece Array
 var possible_pieces = [
@@ -57,10 +61,13 @@ func _ready() -> void:
 	spawn_pieces()
 	spawn_ice()
 	spawn_locks()
+	spawn_concrete()
 
 #check non movable tiles
 func restricted_fill(place) -> bool:
 	if is_in_array(empty_spaces , place):
+		return true
+	if is_in_array(concrete_spaces , place):
 		return true
 	return false
 
@@ -76,6 +83,12 @@ func is_in_array(array, item):
 		if array[i] == item:
 			return true
 	return false
+	
+func remove_from_array(array,item):
+	for i in range(array.size() -1, -1,-1):
+		if array[i] == item:
+			array.remove_at(i)
+			break
 
 #Creates a 2d array for x and y coords
 func make_2d_array() -> Array:
@@ -113,6 +126,11 @@ func spawn_ice():
 func spawn_locks():
 	for i in lock_spaces.size():
 		emit_signal("make_lock", lock_spaces[i])
+
+#spawn concrete
+func spawn_concrete():
+	for i in concrete_spaces.size():
+		emit_signal("make_concrete", concrete_spaces[i])
 
 # works out where to display each piece
 func grid_to_pixel(column , row) -> Vector2:
@@ -255,9 +273,25 @@ func destory_matched():
 	else:
 		swap_back()
 
+func check_concrete(column,row):
+	#check right
+	if column < width -1:
+		emit_signal("damage_concrete", Vector2(column+1,row))
+	#check left
+	if column > 0:
+		emit_signal("damage_concrete", Vector2(column-1,row))
+	#check up
+	if row < height -1:
+		emit_signal("damage_concrete", Vector2(column,row+1))
+	#check down
+	if row > 0:
+		emit_signal("damage_concrete", Vector2(column,row-1))
+	
+
 func damage_special(column,row):
 	emit_signal("damage_ice" , Vector2(column,row))
 	emit_signal("damage_lock", Vector2(column,row))
+	check_concrete(column,row)
 
 #moving the pieces down
 func collapse_columns():
@@ -318,7 +352,7 @@ func _on_refill_timer_timeout() -> void:
 
 
 func _on_lock_holder_remove_lock(place: Vector2) -> void:
-	for i in range(lock_spaces.size() -1, -1,-1):
-		if lock_spaces[i] == place:
-			lock_spaces.remove_at(i)
-			break
+	remove_from_array(lock_spaces , place)
+
+func _on_concrete_holder_remove_concrete(place : Vector2) -> void:
+	remove_from_array(concrete_spaces , place)
