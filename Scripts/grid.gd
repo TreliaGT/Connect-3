@@ -18,6 +18,7 @@ var height = 10
 @export var lock_spaces : PackedVector2Array
 @export var concrete_spaces : PackedVector2Array
 @export var slime_spaces : PackedVector2Array
+var damaged_slime = false
 
 #obstacle Signals
 signal damage_ice
@@ -44,6 +45,7 @@ var possible_pieces = [
 
 # the current pieces in the scene
 var all_pieces = []
+var current_matches = []
 
 #swap back var
 var piece_one = null
@@ -56,6 +58,12 @@ var move_check = false
 var first_touch = Vector2(0,0)
 var final_touch = Vector2(0,0)
 var controlling = false
+
+#scoring Var
+signal update_score
+@export var piece_value : int
+var streak = 1
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -180,6 +188,16 @@ func swap_pieces(column,row, direction):
 	var other_piece = all_pieces[column + direction.x][row + direction.y]
 	if first_piece != null and other_piece != null:
 		if !restricted_move(Vector2(column,row)) and !restricted_move(Vector2(column,row) + direction):
+			if is_color_bomb(first_piece , other_piece):
+				if first_piece.color == "color":
+					match_color(other_piece.color)
+					match_and_dim(first_piece)
+					add_to_array(Vector2(column,row))
+				else:
+					match_color(first_piece.color)
+					match_and_dim(other_piece)
+					add_to_array(Vector2(column + direction.x,row + direction.y))
+					
 			store_info(first_piece ,other_piece , Vector2(column, row) , direction)
 			state = wait
 			all_pieces[column][row] = other_piece
@@ -189,6 +207,12 @@ func swap_pieces(column,row, direction):
 			if !move_check:
 				find_matches()
 		
+#check colour bomb
+func is_color_bomb(piece_1 , piece_2) -> bool:
+	if piece_1.color == "color" or piece_2.color == "color":
+		return true
+	return false
+	
 #swaps pieces back when no matches
 func swap_back():
 	if piece_one != null and piece_two != null:
@@ -250,26 +274,110 @@ func find_matches():
 							match_and_dim(all_pieces[i-1][j])
 							match_and_dim(all_pieces[i][j])
 							match_and_dim(all_pieces[i+1][j])
+							add_to_array(Vector2(i,j))
+							add_to_array(Vector2(i-1,j))
+							add_to_array(Vector2(i+1,j))
 				if j > 0 and j < height -1:
 					if !is_piece_null(i,j-1) and !is_piece_null(i,j+1):
 						if all_pieces[i][j-1].color == current_color &&  all_pieces[i][j+1].color == current_color:
 							match_and_dim(all_pieces[i][j-1])
 							match_and_dim(all_pieces[i][j])
 							match_and_dim(all_pieces[i][j+1])
+							add_to_array(Vector2(i,j-1))
+							add_to_array(Vector2(i,j))
+							add_to_array(Vector2(i,j+1))
+	get_bombed_pieces()
 	get_parent().get_node("%destory_timer").start()
 
+#get bombed
+func get_bombed_pieces():
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null:
+				if all_pieces[i][j].matched:
+					if all_pieces[i][j].is_column_bomb:
+						match_all_in_column(i)
+					elif all_pieces[i][j].is_row_bomb:
+						match_all_in_row(j)
+					elif all_pieces[i][j].is_adjacent_bomb:
+						find_adjacent_pieces(i,j)
+					
+	
+#adds to current matches
+func add_to_array(value, array_to_add = current_matches):
+	if !array_to_add.has(value):
+		array_to_add.append(value)
+	
+#checks is piece is null
 func is_piece_null(column, row):
 	if all_pieces[column][row] == null:
 		return true
 	
-
-
+#changes piece to dim once matched
 func match_and_dim(item):
 	item.matched = true
 	item.dim()
 
+#creates the bomb
+func make_bomb(bomb_type , color):
+	for i in current_matches.size():
+		var current_column = current_matches[i].x
+		var current_row = current_matches[i].y
+		if all_pieces[current_column][current_row] == piece_one and piece_one.color == color:
+			piece_one.matched = false
+			change_bomb(bomb_type , piece_one)
+		if all_pieces[current_column][current_row] == piece_two and piece_two.color == color:
+			piece_two.matched = false
+			change_bomb(bomb_type , piece_two)
+			
+func change_bomb(bomb_type , piece):
+	if bomb_type == 0:
+		piece.make_adjacemt_bombs()
+	elif bomb_type == 1:
+		piece.make_column_bomb()
+	elif bomb_type == 2:
+		piece.make_row_bomb()
+	elif bomb_type == 3:
+		piece.make_color_bomb()
+
+#finds if bomb should be summoned
+func find_bombs():
+	for i in current_matches.size():
+		var current_column = current_matches[i].x
+		var current_row = current_matches[i].y
+		var current_color = all_pieces[current_column][current_row].color
+		var col_matched = 0
+		var row_matched = 0
+		#check for column, row , color
+		for j in current_matches.size():
+			var this_column = current_matches[j].x
+			var this_row = current_matches[j].y
+			var this_color = all_pieces[this_column][this_row].color
+			if this_column == current_column and this_color == current_color:
+				col_matched += 1
+			if this_row == current_row and this_color == current_color:
+				row_matched += 1
+		
+		#0 is adj bomb, 1 is a col bomb, 2 is a row bomb , 3 is a rainbow bomb
+		if col_matched == 5 or row_matched == 5:
+			make_bomb(3, current_color)
+			return
+		elif col_matched >= 3 and row_matched >= 3:
+			make_bomb(0, current_color)
+			return
+		elif row_matched == 4:
+			make_bomb(2, current_color)
+			return
+		elif col_matched == 4:
+			make_bomb(1, current_color)
+			return
+	
+		
+
+
 #destory the matched pieces
 func destory_matched():
+	find_bombs()
 	var was_matched = false
 	for i in width:
 		for j in height:
@@ -279,11 +387,13 @@ func destory_matched():
 					was_matched = true
 					all_pieces[i][j].queue_free()
 					all_pieces[i][j] = null
+					emit_signal("update_score", piece_value * streak)
 	move_check = true
 	if was_matched:
 		get_parent().get_node("%collapse_timer").start()
 	else:
 		swap_back()
+	current_matches.clear()
 
 func check_concrete(column,row):
 	#check right
@@ -319,6 +429,25 @@ func damage_special(column,row):
 	check_concrete(column,row)
 	check_slime(column,row)
 
+#matches the color
+func match_color(color):
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null:
+				if all_pieces[i][j].color == color:
+					all_pieces[i][j].matched = true
+					match_and_dim(all_pieces[i][j])
+					add_to_array(Vector2(i,j))
+					
+#clear board
+func clear_board():
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null:
+				all_pieces[i][j].matched = true
+				match_and_dim(all_pieces[i][j])
+				add_to_array(Vector2(i,j))
+	
 #moving the pieces down
 func collapse_columns():
 	for i in range(width):
@@ -334,6 +463,7 @@ func collapse_columns():
 	
 # refill the columns 
 func refill_columns():
+	streak += 1
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] == null && !restricted_fill(Vector2(i,j)):
@@ -361,9 +491,85 @@ func after_refill():
 					find_matches()
 					get_parent().get_node("%destory_timer").start()
 					return
+	if !damaged_slime:
+		generate_slime()
 	state = move
+	streak = 1
 	move_check = false
-	
+	damaged_slime = false
+
+#checks if neighbour tile is normal tile
+func find_normal_neighbour(column , row):
+	#check right
+	if is_in_grid(Vector2(column + 1 , row)):
+		if all_pieces[column + 1] [row] !=null:
+			return Vector2(column + 1 , row);
+	#check left
+	if is_in_grid(Vector2(column - 1 , row)):
+		if all_pieces[column - 1] [row] !=null:
+			return Vector2(column - 1 , row);
+	#check up
+	if is_in_grid(Vector2(column , row + 1)):
+		if all_pieces[column] [row + 1] !=null:
+			return Vector2(column , row + 1);
+	#check down
+	if is_in_grid(Vector2(column , row - 1)):
+		if all_pieces[column] [row - 1] !=null:
+			return Vector2(column , row - 1);
+	return null
+
+#generate new slime
+func generate_slime():
+	#check if slime are on the board
+	if slime_spaces.size() > 0:
+		var slime_made = false
+		var tracker = 0
+		while !slime_made && tracker < 100:
+			#check a random slime
+			var random_num = floor(randf_range(0, slime_spaces.size()))
+			var curr_position = slime_spaces[random_num]
+			var neighbour = find_normal_neighbour(curr_position.x , curr_position.y)
+			#create slime on neighter
+			if neighbour != null:
+				all_pieces[neighbour.x][neighbour.y].queue_free()
+				all_pieces[neighbour.x][neighbour.y] = null
+				slime_spaces.append(Vector2(neighbour.x , neighbour.y))
+				emit_signal("make_slime", Vector2(neighbour.x , neighbour.y))
+				slime_made = true
+			tracker += 1
+
+#remove all pieces in column
+func match_all_in_column(column):
+	for i in height:
+		if all_pieces[column][i] != null:
+			if all_pieces[column][i].is_row_bomb:
+				match_all_in_row(i)
+			if all_pieces[column][i].is_adjacent_bomb:
+				find_adjacent_pieces(column , i)
+			all_pieces[column][i].matched = true
+
+#remove all pieces in row
+func match_all_in_row(row):
+	for i in width:
+		if all_pieces[i][row] != null:
+			if all_pieces[i][row].is_column_bomb:
+				match_all_in_column(i)
+			if all_pieces[i][row].is_adjacent_bomb:
+				find_adjacent_pieces(i , row)
+			all_pieces[i][row].matched = true
+
+#find adjacted pieces
+func find_adjacent_pieces(column, row):
+	for i in range(-1 , 2):
+		for j in range(-1,2):
+			if is_in_grid(Vector2(column + i , row + j)):
+				if all_pieces[column + i][row + j] != null:
+					if all_pieces[column + i][row + j].is_column_bomb:
+						match_all_in_column(column + i)
+					if all_pieces[column + i][row + j].is_row_bomb:
+						match_all_in_row(row + j)
+					all_pieces[column + i][row + j].matched = true
+
 #Destory timer
 func _on_destory_timer_timeout() -> void:
 	destory_matched()
@@ -385,4 +591,5 @@ func _on_concrete_holder_remove_concrete(place : Vector2) -> void:
 
 
 func _on_slime_holder_remove_slime(place):
+	damaged_slime = true
 	remove_from_array(slime_spaces , place)

@@ -1,10 +1,16 @@
-[gd_scene load_steps=3 format=3 uid="uid://vyqic7yrvxhw"]
+[gd_scene load_steps=6 format=3 uid="uid://vyqic7yrvxhw"]
 
 [ext_resource type="PackedScene" uid="uid://sn8acyey6q4" path="res://Scenes/piece.tscn" id="1_rwlfy"]
+[ext_resource type="Texture2D" uid="uid://bmmbm33eyvx5g" path="res://Art/Pieces/Light Green Row.png" id="2_moulq"]
 [ext_resource type="Texture2D" uid="uid://cvaotdgi06wyf" path="res://Art/Pieces/Light Green Piece.png" id="2_u8mjt"]
+[ext_resource type="Texture2D" uid="uid://1k07anikrgqu" path="res://Art/Pieces/Light Green Column.png" id="3_5xa6p"]
+[ext_resource type="Texture2D" uid="uid://x1alsil33vmb" path="res://Art/Pieces/Light Green Adjacent.png" id="4_uf2wq"]
 
 [node name="light_green_piece" instance=ExtResource("1_rwlfy")]
 color = "light_green"
+row_texture = ExtResource("2_moulq")
+col_texture = ExtResource("3_5xa6p")
+adjacent_texture = ExtResource("4_uf2wq")
 
 [node name="Sprite2D" parent="." index="0"]
 texture = ExtResource("2_u8mjt")

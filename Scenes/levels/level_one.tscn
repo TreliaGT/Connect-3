@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://hk4br1lic4ex"]
+
+[ext_resource type="PackedScene" uid="uid://cf50al0ngcuxg" path="res://Scenes/game_window.tscn" id="1_t17ob"]
+
+[node name="level_one" instance=ExtResource("1_t17ob")]
+
+[node name="grid" parent="." index="1"]
+empty_spaces = PackedVector2Array()
+ice_spaces = PackedVector2Array()
+lock_spaces = PackedVector2Array()
